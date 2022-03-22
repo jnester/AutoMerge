@@ -367,21 +367,51 @@ namespace AutoMerge
                     }
                 }
 
+                // TODO: Just list all branches so we can avoid SLOW call to _changesetService.GetAssociatedBranches(changetIds).
+                //      Maybe its slow due to many changesetIds?
+                //      OR, Just have a textbox where they can type a comma separated list of branches.
+                //      OR, just get a list  of branches with a fast api call?
+                //      OR, after getting the list of branches, cache it for others to use?
+                //      OR, Show the other branches while the slow ones are loading. This leaves the CPU high.
+
+                //var allBranches = mergesRelationships.OrderByDescending(x => x.Version.ToString()).Take(10).ToList();
+
+                //var branches = _changesetService.GetAllBranches();
+                //foreach (var targetBranch in branches)
+                //{
+                //    var targetPath = GetTargetPath(mergesRelationships, targetBranch);
+                //    try
+                //    {
+                //        if (targetPath != null)
+                //        {
+                //            var mergeInfo = branchFactory.CreateTargetBranchInfo(targetBranch, targetPath);
+                //            result.Add(mergeInfo);
+                //        }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Logger.Info("Error creating target branch info for ", targetBranch, targetPath);
+                //        throw;
+                //    }
+                //}
+
+
                 // Feature branch
                 if (mergesRelationships.Count > 0)
                 {
-                    var changetIds =
-                        mergesRelationships.Select(r => r.Version).Cast<ChangesetVersionSpec>().Select(c => c.ChangesetId)
-                        .Distinct()
-                        .ToArray();
-                    var branches = _changesetService.GetAssociatedBranches(changetIds);
+                    //var changetIds =
+                    //    mergesRelationships.Select(r => r.Version).Cast<ChangesetVersionSpec>().Select(c => c.ChangesetId)
+                    //    .Distinct()
+                    //    .ToArray();
+                    var branches = mergesRelationships.OrderByDescending(x => x.Version.ToString()).Take(10).ToList();
 
                     foreach (var mergesRelationship in mergesRelationships)
                     {
                         var targetBranch = branches.FirstOrDefault(b => IsTargetPath(mergesRelationship, b));
                         if (targetBranch != null)
                         {
-                            var mergeInfo = branchFactory.CreateTargetBranchInfo(targetBranch, mergesRelationship);
+                            // TODO: Test this
+                            var mergeInfo = branchFactory.CreateBranch(targetBranch.Item, mergesRelationship.Item);
                             result.Add(mergeInfo);
                         }
                     }
@@ -498,14 +528,14 @@ namespace AutoMerge
             {
                 foreach (var change in changes)
                 {
-//                    if (SkipChange(change.ChangeType, change.Item))
-//                        continue;
+                    //                    if (SkipChange(change.ChangeType, change.Item))
+                    //                        continue;
 
-//                    if (topFolder != null)
-//                    {
-//                        if (!IsNeedCalculateTopFolder(change.ChangeType, change.Item) change.Item.ServerItem.Contains(topFolder) && change.Item.ServerItem != topFolder)
-//                            continue;
-//                    }
+                    //                    if (topFolder != null)
+                    //                    {
+                    //                        if (!IsNeedCalculateTopFolder(change.ChangeType, change.Item) change.Item.ServerItem.Contains(topFolder) && change.Item.ServerItem != topFolder)
+                    //                            continue;
+                    //                    }
 
                     var changeFolder = ExtractFolder(change.ChangeType, change.Item);
                     if (changeFolder != topFolder)
@@ -539,10 +569,10 @@ namespace AutoMerge
             return folder == rootFolder ? folder + "/" : folder;
         }
 
-//        private static bool SkipChange(ChangeType changeType, Item item)
-//        {
-//            return changeType.HasFlag(ChangeType.SourceRename) && changeType.HasFlag(ChangeType.Delete);
-//        }
+        //        private static bool SkipChange(ChangeType changeType, Item item)
+        //        {
+        //            return changeType.HasFlag(ChangeType.SourceRename) && changeType.HasFlag(ChangeType.Delete);
+        //        }
 
         private static string ExtractFolder(ChangeType changeType, Item item)
         {
@@ -704,7 +734,7 @@ namespace AutoMerge
         {
             return String.Join(";", resultModels.Select(rm => rm.Comment).Distinct());
         }
-        
+
         private void OpenPendingChanges(ICollection<MergeResultModel> resultModels)
         {
             var pendingChanges = new List<PendingChange>(20);
@@ -928,7 +958,7 @@ namespace AutoMerge
         private TrackMergeInfo GetTrackMergeInfo(MergeInfoViewModel mergeInfo, Changeset changeset, VersionControlServer versionControl)
         {
             var mergesRelationships = GetMergesRelationships(mergeInfo.SourcePath, versionControl);
-            var trackMerges = versionControl.TrackMerges(new[] {changeset.ChangesetId},
+            var trackMerges = versionControl.TrackMerges(new[] { changeset.ChangesetId },
                 new ItemIdentifier(mergeInfo.SourcePath),
                 mergesRelationships.ToArray(),
                 null);
@@ -940,7 +970,7 @@ namespace AutoMerge
             trackMergeInfo.SourceBranch = mergeInfo.SourceBranch;
             trackMergeInfo.SourceChangesetId = changeset.ChangesetId;
             trackMergeInfo.SourceWorkItemIds = changeset.AssociatedWorkItems != null
-                ? changeset.AssociatedWorkItems.Select(w => (long) w.Id).ToList()
+                ? changeset.AssociatedWorkItems.Select(w => (long)w.Id).ToList()
                 : new List<long>(0);
             trackMergeInfo.SourceWorkItemTitles = changeset.AssociatedWorkItems != null
                 ? changeset.AssociatedWorkItems.Select(w => w.Title).ToList()
@@ -1156,7 +1186,7 @@ namespace AutoMerge
 
         private static Conflict[] AutoResolveConflicts(Workspace workspace, string targetPath, MergeOption mergeOption)
         {
-            var targetPaths = new[] {targetPath};
+            var targetPaths = new[] { targetPath };
             var conflicts = workspace.QueryConflicts(targetPaths, true);
             if (conflicts.IsNullOrEmpty())
                 return null;

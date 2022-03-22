@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using AutoMerge.Events;
 using AutoMerge.Prism.Events;
 using Microsoft.TeamFoundation.VersionControl.Client;
@@ -43,7 +44,14 @@ namespace AutoMerge
 		{
 			get
 			{
-				return BranchHelper.GetShortBranchName(TargetBranch);
+                var shortName = BranchHelper.GetShortBranchName(TargetBranch);
+                var pathName = string.Join("/", TargetBranch.Split('/').Where(x => x.Contains('.')));
+                var result = shortName;
+                if (shortName != pathName)
+                {
+                    result += " " + pathName;
+                }
+                return result;
 			}
 		}
 

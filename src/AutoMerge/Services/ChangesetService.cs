@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.TeamFoundation.VersionControl.Client;
 
@@ -41,6 +41,14 @@ namespace AutoMerge
 		{
 			return _versionControlServer.GetChangesForChangeset(changesetId, false, int.MaxValue, null, null, null, true);
 		}
+
+		public List<ItemIdentifier> GetAllBranches(params int[] changesetId)
+		{
+			var branches = _versionControlServer.QueryRootBranchObjects(RecursionType.None).SelectMany(x =>x.ChildBranches).Distinct();
+
+			return branches.ToList();
+		}
+
 
 		public List<ItemIdentifier> GetAssociatedBranches(params int[] changesetId)
 		{

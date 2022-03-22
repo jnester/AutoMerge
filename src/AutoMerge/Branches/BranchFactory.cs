@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AutoMerge.Prism.Events;
 using Microsoft.TeamFoundation.VersionControl.Client;
 
@@ -35,7 +35,7 @@ namespace AutoMerge
 			return CreateBranch(_sourceBranch, _sourceFolder);
 		}
 
-		private MergeInfoViewModel CreateBranch(string targetBranch, string targetPath)
+		public MergeInfoViewModel CreateBranch(string targetBranch, string targetPath)
 		{
 			var mergeInfo = new MergeInfoViewModel(_eventAggregator)
 			{
